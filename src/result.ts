@@ -1,4 +1,4 @@
-import { T, Val, EmptyArray, IterType, FalseyValues, isTruthy } from "./common";
+import { SymbolT, SymbolVal, EmptyArray, IterType, FalseyValues, isTruthy } from "./common";
 import { Option, Some, None } from "./option";
 
 export type Ok<T> = ResultType<T, never>;
@@ -16,17 +16,17 @@ type ResultErrors<R> = {
 };
 
 export class ResultType<T, E> {
-   readonly [T]: boolean;
-   readonly [Val]: T | E;
+   readonly [SymbolT]: boolean;
+   readonly [SymbolVal]: T | E;
 
    constructor(val: T | E, ok: boolean) {
-      this[Val] = val;
-      this[T] = ok;
+      this[SymbolVal] = val;
+      this[SymbolT] = ok;
    }
 
    [Symbol.iterator](this: Result<T, E>): IterType<T> {
-      return this[T]
-         ? (this[Val] as any)[Symbol.iterator]()
+      return this[SymbolT]
+         ? (this[SymbolVal] as any)[Symbol.iterator]()
          : EmptyArray[Symbol.iterator]();
    }
 
@@ -48,7 +48,7 @@ export class ResultType<T, E> {
    into(this: Result<T, E>): T | undefined;
    into<U extends FalseyValues>(this: Result<T, E>, err: U): T | U;
    into(this: Result<T, E>, err?: FalseyValues): T | FalseyValues {
-      return this[T] ? (this[Val] as T) : err;
+      return this[SymbolT] ? (this[SymbolVal] as T) : err;
    }
 
    /**
@@ -65,7 +65,7 @@ export class ResultType<T, E> {
     * ```
     */
    isLike(this: Result<T, E>, cmp: unknown): cmp is Result<unknown, unknown> {
-      return cmp instanceof ResultType && this[T] === cmp[T];
+      return cmp instanceof ResultType && this[SymbolT] === cmp[SymbolT];
    }
 
    /**
@@ -80,7 +80,7 @@ export class ResultType<T, E> {
     * ```
     */
    isOk(this: Result<T, E>): this is Ok<T> {
-      return this[T];
+      return this[SymbolT];
    }
 
    /**
@@ -95,7 +95,7 @@ export class ResultType<T, E> {
     * ```
     */
    isErr(this: Result<T, E>): this is Err<E> {
-      return !this[T];
+      return !this[SymbolT];
    }
 
    /**
@@ -117,7 +117,7 @@ export class ResultType<T, E> {
     * ```
     */
    filter(this: Result<T, E>, f: (val: T) => boolean): Option<T> {
-      return this[T] && f(this[Val] as T) ? Some(this[Val] as T) : None;
+      return this[SymbolT] && f(this[SymbolVal] as T) ? Some(this[SymbolVal] as T) : None;
    }
 
    /**
@@ -135,8 +135,8 @@ export class ResultType<T, E> {
     * ```
     */
    expect(this: Result<T, E>, msg: string): T {
-      if (this[T]) {
-         return this[Val] as T;
+      if (this[SymbolT]) {
+         return this[SymbolVal] as T;
       } else {
          throw new Error(msg);
       }
@@ -156,10 +156,10 @@ export class ResultType<T, E> {
     * ```
     */
    expectErr(this: Result<T, E>, msg: string): E {
-      if (this[T]) {
+      if (this[SymbolT]) {
          throw new Error(msg);
       } else {
-         return this[Val] as E;
+         return this[SymbolVal] as E;
       }
    }
 
@@ -215,7 +215,7 @@ export class ResultType<T, E> {
     * ```
     */
    unwrapOr(this: Result<T, E>, def: T): T {
-      return this[T] ? (this[Val] as T) : def;
+      return this[SymbolT] ? (this[SymbolVal] as T) : def;
    }
 
    /**
@@ -230,7 +230,7 @@ export class ResultType<T, E> {
     * ```
     */
    unwrapOrElse(this: Result<T, E>, f: () => T): T {
-      return this[T] ? (this[Val] as T) : f();
+      return this[SymbolT] ? (this[SymbolVal] as T) : f();
    }
 
    /**
@@ -248,7 +248,7 @@ export class ResultType<T, E> {
     * ```
     */
    unwrapUnchecked(this: Result<T, E>): T | E {
-      return this[Val];
+      return this[SymbolVal];
    }
 
    /**
@@ -268,7 +268,7 @@ export class ResultType<T, E> {
     * ```
     */
    or(this: Result<T, E>, resb: Result<T, E>): Result<T, E> {
-      return this[T] ? (this as any) : resb;
+      return this[SymbolT] ? (this as any) : resb;
    }
 
    /**
@@ -290,7 +290,7 @@ export class ResultType<T, E> {
     * ```
     */
    orElse<F>(this: Result<T, E>, f: (err: E) => Result<T, F>): Result<T, F> {
-      return this[T] ? (this as unknown as Result<T, F>) : f(this[Val] as E);
+      return this[SymbolT] ? (this as unknown as Result<T, F>) : f(this[SymbolVal] as E);
    }
 
    /**
@@ -311,7 +311,7 @@ export class ResultType<T, E> {
     * ```
     */
    and<U>(this: Result<T, E>, resb: Result<U, E>): Result<U, E> {
-      return this[T] ? resb : (this as any);
+      return this[SymbolT] ? resb : (this as any);
    }
 
    /**
@@ -333,7 +333,7 @@ export class ResultType<T, E> {
     * ```
     */
    andThen<U>(this: Result<T, E>, f: (val: T) => Result<U, E>): Result<U, E> {
-      return this[T] ? f(this[Val] as T) : (this as any);
+      return this[SymbolT] ? f(this[SymbolVal] as T) : (this as any);
    }
 
    /**
@@ -348,8 +348,8 @@ export class ResultType<T, E> {
     */
    map<U>(this: Result<T, E>, f: (val: T) => U): Result<U, E> {
       return new ResultType(
-         this[T] ? f(this[Val] as T) : (this[Val] as E),
-         this[T]
+         this[SymbolT] ? f(this[SymbolVal] as T) : (this[SymbolVal] as E),
+         this[SymbolT]
       ) as Result<U, E>;
    }
 
@@ -365,8 +365,8 @@ export class ResultType<T, E> {
     */
    mapErr<F>(this: Result<T, E>, op: (err: E) => F): Result<T, F> {
       return new ResultType(
-         this[T] ? (this[Val] as T) : op(this[Val] as E),
-         this[T]
+         this[SymbolT] ? (this[SymbolVal] as T) : op(this[SymbolVal] as E),
+         this[SymbolT]
       ) as Result<T, F>;
    }
 
@@ -388,7 +388,7 @@ export class ResultType<T, E> {
     * ```
     */
    mapOr<U>(this: Result<T, E>, def: U, f: (val: T) => U): U {
-      return this[T] ? f(this[Val] as T) : def;
+      return this[SymbolT] ? f(this[SymbolVal] as T) : def;
    }
 
    /**
@@ -406,7 +406,7 @@ export class ResultType<T, E> {
     * ```
     */
    mapOrElse<U>(this: Result<T, E>, def: (err: E) => U, f: (val: T) => U): U {
-      return this[T] ? f(this[Val] as T) : def(this[Val] as E);
+      return this[SymbolT] ? f(this[SymbolVal] as T) : def(this[SymbolVal] as E);
    }
 
    /**
@@ -426,7 +426,7 @@ export class ResultType<T, E> {
     * ```
     */
    ok(this: Result<T, E>): Option<T> {
-      return this[T] ? Some(this[Val] as T) : None;
+      return this[SymbolT] ? Some(this[SymbolVal] as T) : None;
    }
 }
 

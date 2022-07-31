@@ -1,4 +1,4 @@
-import { T, Val, FnVal } from "./common";
+import { SymbolT, SymbolVal, SymbolFnVal } from "./common";
 import { Option, Some, None } from "./option";
 import { Result, Ok, Err } from "./result";
 
@@ -12,7 +12,7 @@ type ChainedBranches<T, U> =
 
 type BranchCondition<T> =
    | Mapped<T, boolean>
-   | (T extends { [T]: boolean } ? MonadCondition<T> : Condition<T>);
+   | (T extends { [SymbolT]: boolean } ? MonadCondition<T> : Condition<T>);
 
 type Branch<T, U> = [BranchCondition<T>, BranchResult<T, U>];
 type Mapped<T, U> = (val: T) => U;
@@ -377,11 +377,11 @@ export type _ = any;
  */
 export function Fn<T extends (...args: any) => any>(fn: T): () => T {
    const val: any = () => throwFnCalled();
-   (val as any)[FnVal] = fn;
+   (val as any)[SymbolFnVal] = fn;
    return val;
 }
 
-export type Fn<T> = { (): never; [FnVal]: T };
+export type Fn<T> = { (): never; [SymbolFnVal]: T };
 
 function matchMapped<T, U>(
    val: T,
@@ -389,13 +389,13 @@ function matchMapped<T, U>(
    defaultBranch: DefaultBranch<U>
 ): U {
    if (Option.is(val)) {
-      if (val[T]) {
+      if (val[SymbolT]) {
          if (pattern.Some) {
             if (typeof pattern.Some === "function") {
-               return pattern.Some(val[Val]);
+               return pattern.Some(val[SymbolVal]);
             } else {
                return matchDispatch(
-                  val[Val],
+                  val[SymbolVal],
                   pattern.Some,
                   typeof pattern._ === "function" ? pattern._ : defaultBranch
                );
@@ -405,13 +405,13 @@ function matchMapped<T, U>(
          return pattern.None();
       }
    } else if (Result.is(val)) {
-      const Branch = val[T] ? pattern.Ok : pattern.Err;
+      const Branch = val[SymbolT] ? pattern.Ok : pattern.Err;
       if (Branch) {
          if (typeof Branch === "function") {
-            return Branch(val[Val]);
+            return Branch(val[SymbolVal]);
          } else {
             return matchDispatch(
-               val[Val],
+               val[SymbolVal],
                Branch,
                typeof pattern._ === "function" ? pattern._ : defaultBranch
             );
@@ -431,13 +431,13 @@ function matchChained<T, U>(
 ): U {
    for (const branch of pattern) {
       if (typeof branch === "function") {
-         return (branch as Fn<U>)[FnVal] ? (branch as Fn<U>)[FnVal] : branch();
+         return (branch as Fn<U>)[SymbolFnVal] ? (branch as Fn<U>)[SymbolFnVal] : branch();
       } else {
          const [cond, result] = branch;
          if (matches(cond, val, true)) {
             if (typeof result === "function") {
-               return (result as Fn<U>)[FnVal]
-                  ? (result as Fn<U>)[FnVal]
+               return (result as Fn<U>)[SymbolFnVal]
+                  ? (result as Fn<U>)[SymbolFnVal]
                   : (result as (val: T) => U)(val);
             } else {
                return result;
@@ -459,16 +459,16 @@ function matches<T>(
    }
 
    if (typeof cond === "function") {
-      return (cond as Fn<T>)[FnVal]
-         ? (cond as Fn<T>)[FnVal] === val
+      return (cond as Fn<T>)[SymbolFnVal]
+         ? (cond as Fn<T>)[SymbolFnVal] === val
          : evaluate && (cond as (val: T) => boolean)(val);
    }
 
    if (isObjectLike(cond)) {
-      if (T in cond) {
+      if (SymbolT in cond) {
          return (
             (cond as any).isLike(val) &&
-            matches((cond as any)[Val], (val as any)[Val], false)
+            matches((cond as any)[SymbolVal], (val as any)[SymbolVal], false)
          );
       }
 

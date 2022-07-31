@@ -1,8 +1,15 @@
-import { T, Val, EmptyArray, IterType, FalseyValues, isTruthy } from "./common";
+import {
+   SymbolT,
+   SymbolVal,
+   EmptyArray,
+   IterType,
+   FalseyValues,
+   isTruthy,
+} from "./common";
 import { Result, Ok, Err } from "./result";
 
-export type Some<T> = OptionType<T> & { [T]: true };
-export type None = OptionType<never> & { [T]: false };
+export type Some<T> = OptionType<T> & { [SymbolT]: true };
+export type None = OptionType<never> & { [SymbolT]: false };
 export type Option<T> = OptionType<T>;
 
 type From<T> = Exclude<T, Error | FalseyValues>;
@@ -12,17 +19,17 @@ type OptionTypes<O> = {
 };
 
 class OptionType<T> {
-   readonly [T]: boolean;
-   readonly [Val]: T;
+   readonly [SymbolT]: boolean;
+   readonly [SymbolVal]: T;
 
    constructor(val: T, some: boolean) {
-      this[T] = some;
-      this[Val] = val;
+      this[SymbolT] = some;
+      this[SymbolVal] = val;
    }
 
    [Symbol.iterator](this: Option<T>): IterType<T> {
-      return this[T]
-         ? (this[Val] as any)[Symbol.iterator]()
+      return this[SymbolT]
+         ? (this[SymbolVal] as any)[Symbol.iterator]()
          : EmptyArray[Symbol.iterator]();
    }
 
@@ -44,7 +51,7 @@ class OptionType<T> {
    into(this: Option<T>): T | undefined;
    into<U extends FalseyValues>(this: Option<T>, none: U): T | U;
    into(this: Option<T>, none?: FalseyValues): T | FalseyValues {
-      return this[T] ? this[Val] : none;
+      return this[SymbolT] ? this[SymbolVal] : none;
    }
 
    /**
@@ -61,7 +68,7 @@ class OptionType<T> {
     * ```
     */
    isLike(this: Option<T>, cmp: unknown): cmp is Option<unknown> {
-      return cmp instanceof OptionType && this[T] === cmp[T];
+      return cmp instanceof OptionType && this[SymbolT] === cmp[SymbolT];
    }
 
    /**
@@ -76,7 +83,7 @@ class OptionType<T> {
     * ```
     */
    isSome(this: Option<T>): this is Some<T> {
-      return this[T];
+      return this[SymbolT];
    }
 
    /**
@@ -91,7 +98,7 @@ class OptionType<T> {
     * ```
     */
    isNone(this: Option<T>): this is None {
-      return !this[T];
+      return !this[SymbolT];
    }
 
    /**
@@ -112,7 +119,7 @@ class OptionType<T> {
     * ```
     */
    filter(this: Option<T>, f: (val: T) => boolean): Option<T> {
-      return this[T] && f(this[Val]) ? this : None;
+      return this[SymbolT] && f(this[SymbolVal]) ? this : None;
    }
 
    /**
@@ -130,8 +137,8 @@ class OptionType<T> {
     * ```
     */
    expect(this: Option<T>, msg: string): T {
-      if (this[T]) {
-         return this[Val];
+      if (this[SymbolT]) {
+         return this[SymbolVal];
       } else {
          throw new Error(msg);
       }
@@ -171,7 +178,7 @@ class OptionType<T> {
     * ```
     */
    unwrapOr(this: Option<T>, def: T): T {
-      return this[T] ? this[Val] : def;
+      return this[SymbolT] ? this[SymbolVal] : def;
    }
 
    /**
@@ -186,7 +193,7 @@ class OptionType<T> {
     * ```
     */
    unwrapOrElse(this: Option<T>, f: () => T): T {
-      return this[T] ? this[Val] : f();
+      return this[SymbolT] ? this[SymbolVal] : f();
    }
 
    /**
@@ -204,7 +211,7 @@ class OptionType<T> {
     * ```
     */
    unwrapUnchecked(this: Option<T>): T | undefined {
-      return this[Val];
+      return this[SymbolVal];
    }
 
    /**
@@ -224,7 +231,7 @@ class OptionType<T> {
     * ```
     */
    or(this: Option<T>, optb: Option<T>): Option<T> {
-      return this[T] ? this : optb;
+      return this[SymbolT] ? this : optb;
    }
 
    /**
@@ -241,7 +248,7 @@ class OptionType<T> {
     * ```
     */
    orElse(this: Option<T>, f: () => Option<T>): Option<T> {
-      return this[T] ? this : f();
+      return this[SymbolT] ? this : f();
    }
 
    /**
@@ -262,7 +269,7 @@ class OptionType<T> {
     * ```
     */
    and<U>(this: Option<T>, optb: Option<U>): Option<U> {
-      return this[T] ? optb : None;
+      return this[SymbolT] ? optb : None;
    }
 
    /**
@@ -284,7 +291,7 @@ class OptionType<T> {
     * ```
     */
    andThen<U>(this: Option<T>, f: (val: T) => Option<U>): Option<U> {
-      return this[T] ? f(this[Val]) : None;
+      return this[SymbolT] ? f(this[SymbolVal]) : None;
    }
 
    /**
@@ -298,7 +305,7 @@ class OptionType<T> {
     * ```
     */
    map<U>(this: Option<T>, f: (val: T) => U): Option<U> {
-      return this[T] ? new OptionType(f(this[Val]), true) : None;
+      return this[SymbolT] ? new OptionType(f(this[SymbolVal]), true) : None;
    }
 
    /**
@@ -319,7 +326,7 @@ class OptionType<T> {
     * ```
     */
    mapOr<U>(this: Option<T>, def: U, f: (val: T) => U): U {
-      return this[T] ? f(this[Val]) : def;
+      return this[SymbolT] ? f(this[SymbolVal]) : def;
    }
 
    /**
@@ -336,7 +343,7 @@ class OptionType<T> {
     * ```
     */
    mapOrElse<U>(this: Option<T>, def: () => U, f: (val: T) => U): U {
-      return this[T] ? f(this[Val]) : def();
+      return this[SymbolT] ? f(this[SymbolVal]) : def();
    }
 
    /**
@@ -356,7 +363,7 @@ class OptionType<T> {
     * ```
     */
    okOr<E>(this: Option<T>, err: E): Result<T, E> {
-      return this[T] ? Ok(this[Val]) : Err(err);
+      return this[SymbolT] ? Ok(this[SymbolVal]) : Err(err);
    }
 
    /**
@@ -376,7 +383,7 @@ class OptionType<T> {
     * ```
     */
    okOrElse<E>(this: Option<T>, f: () => E): Result<T, E> {
-      return this[T] ? Ok(this[Val]) : Err(f());
+      return this[SymbolT] ? Ok(this[SymbolVal]) : Err(f());
    }
 }
 
